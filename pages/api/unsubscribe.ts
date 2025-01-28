@@ -2,18 +2,33 @@ import dbConnect from '@/utils/dbConnect'
 import Subscriber from '@/utils/Subscriber'
 import validator from 'validator'
 
-export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { email } = req.body
+export const runtime = 'edge'
 
-    if (!validator.isEmail(email)) {
-      return res.status(400).json({ message: 'Invalid email format' })
-    }
+export default async function handler(req) {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ message: 'Method Not Allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
+  const body = await req.json()
+  const { email } = body
+
+  if (!validator.isEmail(email)) {
+    return new Response(JSON.stringify({ message: 'Invalid email format' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
 
     try {
       await dbConnect()
     } catch (error) {
-      return res.status(500).json({ message: 'Database connection failed' })
+      return new Response(JSON.stringify({ message: 'Database connection failed' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
 
     try {
@@ -24,14 +39,19 @@ export default async function handler(req, res) {
       )
 
       if (updatedSubscriber) {
-        res.status(200).json({ message: 'Unsubscription successful' })
-      } else {
-        res.status(404).json({ message: 'Subscriber not found' })
+        return new Response(JSON.stringify({ message: 'Unsubscription successful' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
       }
+      return new Response(JSON.stringify({ message: 'Subscriber not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      })
     } catch (error) {
-      res.status(500).json({ message: 'Unsubscription failed' })
+      return new Response(JSON.stringify({ message: 'Unsubscription failed' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
-  } else {
-    res.status(405).json({ message: 'Method Not Allowed' })
-  }
 }

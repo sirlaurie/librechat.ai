@@ -8,6 +8,16 @@ const withBundleAnalyzer = NextBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 })
 
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  runtime: 'edge',
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['*'],
+    },
+  },
+}
+
 /**
  * CSP headers
  * img-src https to allow loading images from SSO providers

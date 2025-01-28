@@ -2,17 +2,24 @@ import validator from 'validator'
 import dbConnect from '@/utils/dbConnect'
 import Subscriber from '@/utils/Subscriber'
 
-export default async function handler(req, res) {
-  const { method, body } = req
+export const runtime = 'edge'
 
-  if (method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' })
+export default async function handler(req) {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ message: 'Method Not Allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 
+  const body = await req.json()
   const { email } = body
 
   if (!email || !validator.isEmail(email)) {
-    return res.status(422).json({ message: 'Valid email is required' })
+    return new Response(JSON.stringify({ message: 'Valid email is required' }), {
+      status: 422,
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 
   try {
@@ -21,15 +28,23 @@ export default async function handler(req, res) {
     const existingSubscriber = await Subscriber.findOne({ email })
 
     if (existingSubscriber) {
-      return res.status(409).json({ message: 'Email already subscribed' })
+      return new Response(JSON.stringify({ message: 'Email already subscribed' }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
 
-    const newSubscriber = new Subscriber({ email })
-    await newSubscriber.save()
+    await Subscriber.save({ email })
 
-    return res.status(201).json({ message: 'Subscription successful' })
+    return new Response(JSON.stringify({ message: 'Subscription successful' }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' }
+    })
   } catch (error) {
     console.error('Error:', error)
-    return res.status(500).json({ message: 'Subscription failed' })
+    return new Response(JSON.stringify({ message: 'Subscription failed' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 }
